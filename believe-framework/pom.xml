@@ -31,6 +31,7 @@
         <xxl-job.version>2.5.0</xxl-job.version>
         <knife4j.version>4.5.0</knife4j.version>
         <lombok.version>1.18.46</lombok.version>
+        <rocketmq.version>2.3.5</rocketmq.version>
     </properties>
 
     <dependencyManagement>
@@ -102,6 +103,13 @@
                 <groupId>cn.dev33</groupId>
                 <artifactId>sa-token-reactor-spring-boot4-starter</artifactId>
                 <version>${sa-token.version}</version>
+            </dependency>
+
+            <!-- RocketMQ -->
+            <dependency>
+                <groupId>org.apache.rocketmq</groupId>
+                <artifactId>rocketmq-spring-boot-starter</artifactId>
+                <version>${rocketmq.version}</version>
             </dependency>
 
             <!-- xxl-job -->

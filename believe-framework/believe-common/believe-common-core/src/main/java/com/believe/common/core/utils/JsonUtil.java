@@ -18,6 +18,10 @@ public final class JsonUtil {
 
     private JsonUtil() {}
 
+    public static JsonMapper mapper() {
+        return MAPPER;
+    }
+
     public static String toJson(Object obj) {
         try {
             return MAPPER.writeValueAsString(obj);
