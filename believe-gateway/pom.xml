@@ -32,10 +32,10 @@
             <artifactId>believe-common-redis</artifactId>
         </dependency>
 
-        <!-- Spring Cloud Gateway -->
+        <!-- Spring Cloud Gateway (WebFlux) -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-starter-gateway</artifactId>
+            <artifactId>spring-cloud-gateway-server-webflux</artifactId>
         </dependency>
 
         <!-- Nacos 服务发现与配置 -->
@@ -58,6 +58,13 @@
         <dependency>
             <groupId>cn.dev33</groupId>
             <artifactId>sa-token-reactor-spring-boot4-starter</artifactId>
+        </dependency>
+
+        <!-- Lombok -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 
