@@ -1,15 +1,8 @@
-server:
-  port: 8080
-
-management:
-  server:
-    port: 8081
-  endpoints:
-    web:
-      exposure:
-        include: health,info,metrics,prometheus
-
 spring:
+  application:
+    name: believe-gateway
+  profiles:
+    active: dev
   cloud:
     gateway:
       discovery:
@@ -29,6 +22,17 @@ spring:
             - Path=/api/user/**
           filters:
             - StripPrefix=1
+
+server:
+  port: 8080
+
+management:
+  server:
+    port: 8081
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
 
 logging:
   level:

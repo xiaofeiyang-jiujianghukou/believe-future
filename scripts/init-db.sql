@@ -4,61 +4,87 @@ CREATE DATABASE IF NOT EXISTS believe DEFAULT CHARACTER SET utf8mb4 COLLATE utf8
 
 USE believe;
 
--- 用户表
-CREATE TABLE IF NOT EXISTS `user` (
-    `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '用户ID',
-    `username` VARCHAR(64) NOT NULL COMMENT '用户名',
-    `password` VARCHAR(256) NOT NULL COMMENT '密码（加密）',
-    `nickname` VARCHAR(64) DEFAULT NULL COMMENT '昵称',
-    `email` VARCHAR(128) DEFAULT NULL COMMENT '邮箱',
-    `phone` VARCHAR(32) DEFAULT NULL COMMENT '手机号',
-    `status` TINYINT NOT NULL DEFAULT 1 COMMENT '状态: 0-禁用, 1-启用',
-    `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    `create_by` BIGINT DEFAULT NULL COMMENT '创建人',
-    `update_by` BIGINT DEFAULT NULL COMMENT '更新人',
-    PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_username` (`username`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户表';
+CREATE TABLE IF NOT EXISTS sys_user (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(64) NOT NULL,
+    password VARCHAR(256) NOT NULL,
+    nickname VARCHAR(64),
+    email VARCHAR(128),
+    phone VARCHAR(32),
+    avatar VARCHAR(256),
+    status INT DEFAULT 1,
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    create_by VARCHAR(64),
+    update_by VARCHAR(64),
+    deleted INT DEFAULT 0,
+    UNIQUE KEY uk_username (username)
+);
 
--- 角色表
-CREATE TABLE IF NOT EXISTS `role` (
-    `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '角色ID',
-    `role_name` VARCHAR(64) NOT NULL COMMENT '角色名称',
-    `role_code` VARCHAR(64) NOT NULL COMMENT '角色编码',
-    `description` VARCHAR(256) DEFAULT NULL COMMENT '角色描述',
-    `status` TINYINT NOT NULL DEFAULT 1 COMMENT '状态: 0-禁用, 1-启用',
-    `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_role_code` (`role_code`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='角色表';
+CREATE TABLE IF NOT EXISTS sys_role (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(64) NOT NULL,
+    code VARCHAR(64) NOT NULL,
+    description VARCHAR(256),
+    sort INT DEFAULT 0,
+    status INT DEFAULT 1,
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    create_by VARCHAR(64),
+    update_by VARCHAR(64),
+    deleted INT DEFAULT 0,
+    UNIQUE KEY uk_code (code)
+);
 
--- 权限表
-CREATE TABLE IF NOT EXISTS `permission` (
-    `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '权限ID',
-    `perm_name` VARCHAR(64) NOT NULL COMMENT '权限名称',
-    `perm_code` VARCHAR(128) NOT NULL COMMENT '权限编码（资源+操作）',
-    `description` VARCHAR(256) DEFAULT NULL COMMENT '权限描述',
-    `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_perm_code` (`perm_code`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='权限表';
+CREATE TABLE IF NOT EXISTS sys_permission (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(64) NOT NULL,
+    code VARCHAR(128),
+    parent_id BIGINT DEFAULT 0,
+    type INT DEFAULT 1 COMMENT '1=菜单 2=按钮 3=API',
+    path VARCHAR(256),
+    icon VARCHAR(64),
+    sort INT DEFAULT 0,
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    create_by VARCHAR(64),
+    update_by VARCHAR(64),
+    deleted INT DEFAULT 0
+);
 
--- 用户-角色关联表
-CREATE TABLE IF NOT EXISTS `user_role` (
-    `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT 'ID',
-    `user_id` BIGINT NOT NULL COMMENT '用户ID',
-    `role_id` BIGINT NOT NULL COMMENT '角色ID',
-    PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_user_role` (`user_id`, `role_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户角色关联表';
+CREATE TABLE IF NOT EXISTS sys_user_role (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    role_id BIGINT NOT NULL,
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    create_by VARCHAR(64),
+    update_by VARCHAR(64),
+    deleted INT DEFAULT 0,
+    UNIQUE KEY uk_user_role (user_id, role_id)
+);
 
--- 角色-权限关联表
-CREATE TABLE IF NOT EXISTS `role_permission` (
-    `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT 'ID',
-    `role_id` BIGINT NOT NULL COMMENT '角色ID',
-    `perm_id` BIGINT NOT NULL COMMENT '权限ID',
-    PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_role_perm` (`role_id`, `perm_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='角色权限关联表';
+CREATE TABLE IF NOT EXISTS sys_role_permission (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    role_id BIGINT NOT NULL,
+    permission_id BIGINT NOT NULL,
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    create_by VARCHAR(64),
+    update_by VARCHAR(64),
+    deleted INT DEFAULT 0,
+    UNIQUE KEY uk_role_perm (role_id, permission_id)
+);
+
+-- 初始化管理员角色
+INSERT IGNORE INTO sys_role (name, code, description, sort) VALUES ('管理员', 'ROLE_ADMIN', '系统管理员', 1);
+INSERT IGNORE INTO sys_role (name, code, description, sort) VALUES ('普通用户', 'ROLE_USER', '普通用户', 2);
+
+-- 初始化权限
+INSERT IGNORE INTO sys_permission (name, code, type) VALUES ('用户管理', 'user:manage', 1);
+INSERT IGNORE INTO sys_permission (name, code, type) VALUES ('角色管理', 'role:manage', 1);
+INSERT IGNORE INTO sys_permission (name, code, type) VALUES ('权限管理', 'perm:manage', 1);
+
+-- 将管理员角色绑定到所有权限
+INSERT IGNORE INTO sys_role_permission (role_id, permission_id)
+SELECT r.id, p.id FROM sys_role r, sys_permission p WHERE r.code = 'ROLE_ADMIN';

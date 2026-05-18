@@ -8,6 +8,7 @@ import org.springframework.core.Ordered;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
@@ -15,16 +16,33 @@ import org.springframework.web.server.WebFilterChain;
 import reactor.core.publisher.Mono;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Slf4j
 @Component
 public class AuthGlobalFilter implements WebFilter, Ordered {
 
-    private static final Set<String> WHITELIST = Set.of(
+    private static final Set<String> DEFAULT_WHITELIST = Set.of(
             "/auth/login", "/auth/register", "/auth/captcha", "/auth/logout",
             "/actuator", "/favicon.ico"
     );
+
+    private final Set<String> whitelist;
+
+    public AuthGlobalFilter(
+            @Value("${believe.gateway.auth.whitelist:#{null}}") List<String> configuredWhitelist) {
+        if (configuredWhitelist == null || configuredWhitelist.isEmpty()) {
+            this.whitelist = DEFAULT_WHITELIST;
+        } else {
+            Set<String> merged = new HashSet<>(DEFAULT_WHITELIST);
+            merged.addAll(configuredWhitelist);
+            this.whitelist = Collections.unmodifiableSet(merged);
+            log.info("Auth whitelist extended: defaults + {}", configuredWhitelist);
+        }
+    }
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
@@ -50,7 +68,7 @@ public class AuthGlobalFilter implements WebFilter, Ordered {
     }
 
     private boolean isWhitelist(String path) {
-        return WHITELIST.stream().anyMatch(path::startsWith);
+        return whitelist.stream().anyMatch(path::startsWith);
     }
 
     private Mono<Void> writeUnauthorized(ServerWebExchange exchange) {

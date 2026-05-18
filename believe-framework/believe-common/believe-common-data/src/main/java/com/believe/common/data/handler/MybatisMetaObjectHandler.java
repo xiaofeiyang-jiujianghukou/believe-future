@@ -4,16 +4,14 @@ import com.baomidou.mybatisplus.core.handlers.MetaObjectHandler;
 import com.believe.common.core.context.AuthContext;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.ibatis.reflection.MetaObject;
-import org.springframework.stereotype.Component;
-
 import java.time.LocalDateTime;
 
 /**
  * MyBatis-Plus 自动填充处理器
  * <p>自动填充 createTime、updateTime、createBy、updateBy</p>
+ * <p>通过 MybatisPlusConfig.@Bean 注册，避免与 @Component 扫描冲突</p>
  */
 @Slf4j
-@Component
 public class MybatisMetaObjectHandler implements MetaObjectHandler {
 
     @Override

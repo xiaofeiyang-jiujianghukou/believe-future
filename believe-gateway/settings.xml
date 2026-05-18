@@ -1,0 +1,29 @@
+<settings>
+    <!-- 指定本地仓库路径（优先于默认的 ~/.m2/repository） -->
+    <localRepository>/opt/maven/repo</localRepository>
+    <mirrors>
+        <mirror>
+            <id>central</id>
+            <mirrorOf>central</mirrorOf>
+            <name>阿里云公共仓库</name>
+            <url>https://maven.aliyun.com/repository/public</url>
+        </mirror>
+    </mirrors>
+    <profiles>
+    <profile>
+        <id>fallback-repo</id>
+        <repositories>
+            <repository>
+                <id>maven-central-fallback</id>
+                <url>https://repo.maven.apache.org/maven2/</url>
+                <releases>
+                    <enabled>true</enabled>
+                </releases>
+            </repository>
+        </repositories>
+    </profile>
+    </profiles>
+    <activeProfiles>
+    <activeProfile>fallback-repo</activeProfile>
+    </activeProfiles>
+</settings>

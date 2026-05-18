@@ -1,0 +1,158 @@
+version: "3.8"
+
+services:
+  # ============================================
+  # 基础设施
+  # ============================================
+
+  mysql:
+    image: crpi-27zlqugq2208c0pz.cn-hangzhou.personal.cr.aliyuncs.com/xiaofeiyang930112/mysql:8.0
+    container_name: believe-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: believe
+      TZ: Asia/Shanghai
+    ports:
+      - "13306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/01-init.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: crpi-27zlqugq2208c0pz.cn-hangzhou.personal.cr.aliyuncs.com/xiaofeiyang930112/redis:7-alpine
+    container_name: believe-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    ports:
+      - "16379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  nacos:
+    image: crpi-27zlqugq2208c0pz.cn-hangzhou.personal.cr.aliyuncs.com/xiaofeiyang930112/nacos-server:v2.5.1
+    container_name: believe-nacos
+    restart: unless-stopped
+    environment:
+      MODE: standalone
+      NACOS_AUTH_ENABLE: "false"
+      NACOS_AUTH_IDENTITY_KEY: ""
+      NACOS_AUTH_IDENTITY_VALUE: ""
+      NACOS_AUTH_TOKEN: ""
+    ports:
+      - "18848:8848"
+      - "19848:9848"
+    healthcheck:
+      test: ["CMD", "curl", "-s", "http://localhost:8848/nacos/v1/console/health/readiness"]
+      interval: 8s
+      timeout: 5s
+      retries: 15
+      start_period: 30s
+
+  nacos-init:
+    image: curlimages/curl:latest
+    container_name: believe-nacos-init
+    depends_on:
+      nacos:
+        condition: service_healthy
+    volumes:
+      - ./nacos-config:/nacos-config
+    entrypoint: ["/bin/sh"]
+    command:
+      - -c
+      - |
+        until curl -s http://nacos:8848/nacos/v1/console/health/readiness > /dev/null; do sleep 2; done
+        echo "==> Creating namespace dev..."
+        curl -s -X POST "http://nacos:8848/nacos/v1/console/namespaces" \
+          -d "customNamespaceId=dev&namespaceName=dev&namespaceDesc=开发环境"
+        echo "==> Publishing common-redis.yaml..."
+        curl -s -X POST "http://nacos:8848/nacos/v1/cs/configs" \
+          --data-urlencode "dataId=common-redis.yaml" \
+          --data-urlencode "group=DEFAULT_GROUP" \
+          --data-urlencode "tenant=dev" \
+          --data-urlencode "type=yaml" \
+          --data-urlencode "content@/nacos-config/common-redis.yaml"
+        echo "==> Nacos init done"
+
+  # ============================================
+  # 业务服务
+  # ============================================
+
+  gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_DIR: believe-gateway
+    container_name: believe-gateway
+    restart: unless-stopped
+    ports:
+      - "18080:8080"
+      - "18081:8081"
+    environment:
+      SPRING_PROFILES_ACTIVE: pro
+
+    depends_on:
+      nacos-init:
+        condition: service_completed_successfully
+
+  auth:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_DIR: believe-auth
+    container_name: believe-auth
+    restart: unless-stopped
+    ports:
+      - "18101:8101"
+      - "18102:8102"
+    environment:
+      SPRING_PROFILES_ACTIVE: pro
+      MYSQL_HOST: mysql
+      MYSQL_USER: root
+      MYSQL_PASSWORD: root
+      JWT_SECRET: believe-jwt-secret-key
+
+    depends_on:
+      mysql:
+        condition: service_healthy
+      nacos-init:
+        condition: service_completed_successfully
+
+  user:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_DIR: believe-user
+    container_name: believe-user
+    restart: unless-stopped
+    ports:
+      - "18201:8201"
+      - "18202:8202"
+    environment:
+      SPRING_PROFILES_ACTIVE: pro
+      MYSQL_HOST: mysql
+      MYSQL_USER: root
+      MYSQL_PASSWORD: root
+
+    depends_on:
+      mysql:
+        condition: service_healthy
+      nacos-init:
+        condition: service_completed_successfully
+
+volumes:
+  mysql-data:
+  redis-data:

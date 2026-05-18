@@ -1,0 +1,18 @@
+spring:
+  config:
+    import: optional:nacos:${spring.application.name}.yaml?group=DEFAULT_GROUP
+  cloud:
+    nacos:
+      discovery:
+        server-addr: localhost:18848
+        namespace: dev
+      config:
+        server-addr: localhost:18848
+        namespace: dev
+        file-extension: yaml
+        shared-configs:
+          - data-id: common-redis.yaml
+            group: DEFAULT_GROUP
+            refresh: true
+  main:
+    web-application-type: reactive

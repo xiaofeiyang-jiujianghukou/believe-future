@@ -5,7 +5,6 @@ import com.believe.common.data.config.dynamic.multi.MultiDataSourceConfig;
 import com.believe.common.data.config.dynamic.readwrite.ReadWriteSplitConfig;
 import com.believe.common.data.config.sharding.ShardingSphereConfig;
 import com.believe.common.data.config.single.SingleDataSourceConfig;
-import com.believe.common.data.handler.MybatisMetaObjectHandler;
 import com.believe.common.data.injector.CustomSqlInjector;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -30,7 +29,6 @@ public class DataAutoConfiguration {
     @Configuration
     @Import({
             MybatisPlusConfig.class,
-            MybatisMetaObjectHandler.class,
             CustomSqlInjector.class
     })
     static class CommonDataConfig {}

@@ -60,9 +60,14 @@ spring:
 
 believe:
   gateway:
+    auth:
+      # 白名单追加（默认项无需配置：/auth/**, /actuator, /favicon.ico）
+      whitelist: /open/api/**,/public/**
     rate-limit:
       enabled: true
       qps: 100
+      # type: sliding-window   # 默认值，内置滑动窗口
+      # type: sentinel          # 切换为 Sentinel 限流
 ```
 
 ## 过滤器链
@@ -73,9 +78,39 @@ believe:
 |-------|--------|------|
 | -2 | `AuthGlobalFilter` | JWT 解析，白名单 `/auth/**`、`/actuator/**` 放行，写入 `X-User-Id` |
 | -1 | `TraceIdGlobalFilter` | 提取/生成 `X-Trace-Id`，传播至下游 |
-| 0 | `RateLimitGlobalFilter` | 滑动窗口限流，QPS 超限返回 429 |
+| 0 | `RateLimitGlobalFilter` | 限流（策略模式，默认滑动窗口，可选 Sentinel） |
 | 1 | `GrayReleaseGlobalFilter` | 检测 `X-Gray-Release` 头，标记灰度版本 |
 | 5 | `RequestLogGlobalFilter` | 记录请求日志：`[traceId] METHOD path status duration` |
+
+## 限流策略
+
+`RateLimitGlobalFilter` 采用策略模式，通过 `believe.gateway.rate-limit.type` 切换实现：
+
+### 内置滑动窗口（默认）
+
+```yaml
+believe:
+  gateway:
+    rate-limit:
+      enabled: true
+      qps: 100
+      # type 不设置或设为 sliding-window
+```
+
+基于 `ConcurrentHashMap` 按路径分桶计数，每秒重置窗口，超过 QPS 返回 429。
+
+### Sentinel 限流（可选）
+
+```yaml
+believe:
+  gateway:
+    rate-limit:
+      enabled: true
+      type: sentinel
+      qps: 100
+```
+
+使用 `SphU.entry()` 接入 Sentinel 流控体系，支持 Sentinel Dashboard 动态规则管理。资源名为 `gateway-rate-limit`，可按需在 Dashboard 中自定义规则。
 
 ## 路由规范
 
@@ -123,4 +158,4 @@ believe:
 
 **2. Sentinel `GatewayCallbackManager` 移除**
 
-Sentinel 5.0 移除了 `com.alibaba.csp.sentinel.adapter.gateway.sc.callback.GatewayCallbackManager`，限流降级响应改用自定义 `WebFilter` 实现。该模块使用滑动窗口计数器替代，通过 `believe.gateway.rate-limit` 配置控制。
+Sentinel 5.0 移除了 `com.alibaba.csp.sentinel.adapter.gateway.sc.callback.GatewayCallbackManager`，限流降级响应改用自定义 `WebFilter` 实现。本模块使用策略模式，默认内置滑动窗口，也可配置 `believe.gateway.rate-limit.type=sentinel` 启用 Sentinel（基于 `SphU.entry()` + reactor `doFinally` 退出 Entry）。
