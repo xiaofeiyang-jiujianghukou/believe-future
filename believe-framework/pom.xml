@@ -32,6 +32,7 @@
         <knife4j.version>4.5.0</knife4j.version>
         <lombok.version>1.18.46</lombok.version>
         <rocketmq.version>2.3.5</rocketmq.version>
+        <protobuf.version>4.30.0</protobuf.version>
     </properties>
 
     <dependencyManagement>
@@ -132,6 +133,13 @@
                 <version>${lombok.version}</version>
             </dependency>
 
+            <!-- Protobuf -->
+            <dependency>
+                <groupId>com.google.protobuf</groupId>
+                <artifactId>protobuf-java</artifactId>
+                <version>${protobuf.version}</version>
+            </dependency>
+
             <!-- Framework 内部模块 -->
             <dependency>
                 <groupId>com.believe</groupId>
@@ -185,6 +193,11 @@
             </dependency>
             <dependency>
                 <groupId>com.believe</groupId>
+                <artifactId>believe-common-spi-extension</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.believe</groupId>
                 <artifactId>believe-job</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -202,6 +215,7 @@
         <module>believe-common/believe-common-exception</module>
         <module>believe-common/believe-common-data</module>
         <module>believe-common/believe-common-spi</module>
+        <module>believe-common/believe-common-spi-extension</module>
         <module>believe-job</module>
     </modules>
 

@@ -24,8 +24,29 @@ SPI（Service Provider Interface）扩展机制模块，定义框架的可扩展
 | 接口 | 方法 | 说明 |
 |------|------|------|
 | `DataSerializer` | `serialize(Object)` / `deserialize(byte[], Class)` | 数据序列化/反序列化 |
-| `NotifyChannel` | `send(String title, String content, Set<String> receivers)` | 通知发送 |
+| `NotifyChannel` | `send(String recipient, String title, String content)` | 通知发送 |
 | `IdGenerator` | `nextId()` / `nextIdStr()` | 分布式 ID 生成 |
+
+### 内置扩展实现（believe-common-spi-extension）
+
+引入 `believe-common-spi-extension` 模块即可获得以下开箱即用的实现：
+
+```xml
+<dependency>
+    <groupId>com.believe</groupId>
+    <artifactId>believe-common-spi-extension</artifactId>
+</dependency>
+```
+
+| SPI 接口 | 实现类 | 标识 | 激活条件 |
+|----------|--------|------|---------|
+| `NotifyChannel` | `SmsNotifyChannel` | sms | `believe.spi.notify.sms.api-url` |
+| `NotifyChannel` | `EmailNotifyChannel` | email | `JavaMailSender` 可用 + `believe.spi.notify.email.from` |
+| `NotifyChannel` | `DingTalkNotifyChannel` | dingtalk | `believe.spi.notify.dingtalk.webhook-url` |
+| `IdGenerator` | `SnowflakeIdGenerator`（雪花算法） | — | 默认启用（可通过自定义 `IdGenerator` Bean 覆盖） |
+| `IdGenerator` | `LeafSegmentIdGenerator`（美团号段） | — | `DataSource` 可用 + `believe.spi.id.leaf.biz-tag` |
+| `DataSerializer` | `JsonDataSerializer` | json | 默认启用 |
+| `DataSerializer` | `ProtobufDataSerializer` | protobuf | `MessageLite` 在 classpath 上 |
 
 ### 使用示例
 
@@ -119,3 +140,26 @@ public class SnowflakeIdGenerator implements IdGenerator {
 ```
 
 注册后，框架中所有 `IdUtil` 调用都会使用你的雪花算法实现，无需修改现有代码。
+
+**6. 配置内置扩展**
+
+```yaml
+believe:
+  spi:
+    notify:
+      sms:
+        api-url: https://sms-api.example.com/send
+      email:
+        from: noreply@believe.com
+      dingtalk:
+        webhook-url: https://oapi.dingtalk.com/robot/send?access_token=xxx
+    id:
+      snowflake:
+        worker-id: 1
+        datacenter-id: 2
+      leaf:
+        biz-tag: order_id
+        step: 2000
+```
+
+无需编写任何 Java 代码，引入依赖并配置 YAML 即可激活对应实现。所有 Bean 均通过 `@ConditionalOnMissingBean` 注册，自定义实现会自动覆盖默认扩展。

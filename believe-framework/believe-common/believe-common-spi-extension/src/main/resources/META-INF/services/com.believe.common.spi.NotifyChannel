@@ -1,0 +1,3 @@
+com.believe.common.spi.extension.notify.SmsNotifyChannel
+com.believe.common.spi.extension.notify.EmailNotifyChannel
+com.believe.common.spi.extension.notify.DingTalkNotifyChannel
