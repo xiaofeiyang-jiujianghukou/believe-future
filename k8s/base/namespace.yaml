@@ -1,0 +1,6 @@
+# Believe 基础 Kubernetes 配置
+# 命名空间定义
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: believe-system

@@ -1,0 +1,35 @@
+server:
+  port: 8080
+
+management:
+  server:
+    port: 8081
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+
+spring:
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+      routes:
+        - id: believe-auth
+          uri: lb://believe-auth
+          predicates:
+            - Path=/api/auth/**
+          filters:
+            - StripPrefix=1
+        - id: believe-user
+          uri: lb://believe-user
+          predicates:
+            - Path=/api/user/**
+          filters:
+            - StripPrefix=1
+
+logging:
+  level:
+    com.believe.gateway: DEBUG

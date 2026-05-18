@@ -1,0 +1,19 @@
+spring:
+  application:
+    name: believe-user
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_HOST:localhost}:8848
+        namespace: ${NACOS_NAMESPACE:dev}
+      config:
+        server-addr: ${NACOS_HOST:localhost}:8848
+        namespace: ${NACOS_NAMESPACE:dev}
+        file-extension: yaml
+        shared-configs:
+          - data-id: common-redis.yaml
+            group: DEFAULT_GROUP
+            refresh: true
+          - data-id: common-datasource.yaml
+            group: DEFAULT_GROUP
+            refresh: true

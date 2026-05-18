@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.believe</groupId>
+        <artifactId>believe-framework</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+        <relativePath>../../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>believe-common-spi</artifactId>
+    <packaging>jar</packaging>
+
+    <name>Believe Common SPI</name>
+    <description>SPI扩展机制基础定义，插件化架构核心</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.believe</groupId>
+            <artifactId>believe-common-core</artifactId>
+        </dependency>
+    </dependencies>
+</project>
