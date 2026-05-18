@@ -1,26 +1,27 @@
 package com.believe.common.core.utils;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.SerializationFeature;
+import tools.jackson.databind.cfg.DateTimeFeature;
+import tools.jackson.databind.json.JsonMapper;
 
 public final class JsonUtil {
 
-    // 1. 核心变化：使用 com.fasterxml.jackson 包下的 ObjectMapper
-    // 2. 只需简单的新建，不再手动注册JavaTimeModule
-    private static final ObjectMapper MAPPER = new ObjectMapper()
-            // 3. 关闭将日期写为时间戳的格式，改为ISO-8601字符串格式
-            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
-            // 4. 忽略JSON字符串中存在，但Java对象没有对应属性的情况
-            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    private static final JsonMapper MAPPER = JsonMapper.builder()
+            // Jackson 3 中，日期格式配置移到了 DateTimeFeature
+            .disable(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS)
+            // 美化输出（可选）
+            .enable(SerializationFeature.INDENT_OUTPUT)
+            .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+            .build();
 
     private JsonUtil() {}
 
     public static String toJson(Object obj) {
         try {
             return MAPPER.writeValueAsString(obj);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new RuntimeException("JSON序列化失败", e);
         }
     }
@@ -28,7 +29,7 @@ public final class JsonUtil {
     public static <T> T fromJson(String json, Class<T> clazz) {
         try {
             return MAPPER.readValue(json, clazz);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new RuntimeException("JSON反序列化失败", e);
         }
     }

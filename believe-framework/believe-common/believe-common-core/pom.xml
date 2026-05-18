@@ -27,11 +27,16 @@
             <artifactId>spring-boot-configuration-processor</artifactId>
             <optional>true</optional>
         </dependency>
-        <!-- 编译时需要，但不打包，由下游提供 -->
+        <!-- Jackson 3 数据绑定库（核心） -->
+        <dependency>
+            <groupId>tools.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
+
+        <!-- Jackson 注解库（注意：groupId 仍为 com.fasterxml.jackson） -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-            <scope>provided</scope>
+            <artifactId>jackson-annotations</artifactId>
         </dependency>
     </dependencies>
 </project>
