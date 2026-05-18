@@ -1,0 +1,40 @@
+# MySQL 分库分表配置
+dataSources:
+  ds_0:
+    dataSourceClassName: com.zaxxer.hikari.HikariDataSource
+    driverClassName: com.mysql.cj.jdbc.Driver
+    jdbcUrl: jdbc:mysql://localhost:3306/db_0?useSSL=false&serverTimezone=Asia/Shanghai
+    username: root
+    password: 123456
+  ds_1:
+    dataSourceClassName: com.zaxxer.hikari.HikariDataSource
+    driverClassName: com.mysql.cj.jdbc.Driver
+    jdbcUrl: jdbc:mysql://localhost:3306/db_1?useSSL=false&serverTimezone=Asia/Shanghai
+    username: root
+    password: 123456
+
+rules:
+  - !SHARDING
+    tables:
+      t_user:
+        actualDataNodes: ds_${0..1}.t_user_${0..1}
+        databaseStrategy:
+          standard:
+            shardingColumn: id
+            shardingAlgorithmName: database_inline
+        tableStrategy:
+          standard:
+            shardingColumn: id
+            shardingAlgorithmName: table_inline
+    shardingAlgorithms:
+      database_inline:
+        type: INLINE
+        props:
+          algorithm-expression: ds_${id % 2}
+      table_inline:
+        type: INLINE
+        props:
+          algorithm-expression: t_user_${id % 2}
+
+props:
+  sql-show: true

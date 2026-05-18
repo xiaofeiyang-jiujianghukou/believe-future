@@ -1,0 +1,23 @@
+believe:
+  data:
+    read-write-split:
+      enabled: false
+    multi-datasource:
+      enabled: false
+    sharding:
+      enabled: true
+      config-location: classpath:sharding/sharding-config.yaml
+      show-sql: true
+
+spring:
+  datasource:
+    driver-class-name: org.apache.shardingsphere.driver.ShardingSphereDriver
+    url: jdbc:shardingsphere:classpath:sharding/sharding-config.yaml
+
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    jdbc-type-for-null: 'null'
+  global-config:
+    db-config:
+      id-type: ASSIGN_ID

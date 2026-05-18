@@ -1,0 +1,33 @@
+believe:
+  data:
+    read-write-split:
+      enabled: true
+    multi-datasource:
+      enabled: false
+    sharding:
+      enabled: false
+
+spring:
+  datasource:
+    master:
+      driver-class-name: org.postgresql.Driver
+      jdbc-url: jdbc:postgresql://localhost:5432/believe_master?useSSL=false&characterEncoding=utf-8
+      username: postgres
+      password: 123456
+      hikari:
+        maximum-pool-size: 10
+    slave:
+      driver-class-name: org.postgresql.Driver
+      jdbc-url: jdbc:postgresql://localhost:5432/believe_slave?useSSL=false&characterEncoding=utf-8
+      username: postgres
+      password: 123456
+      hikari:
+        maximum-pool-size: 20
+
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    jdbc-type-for-null: 'null'
+  global-config:
+    db-config:
+      id-type: ASSIGN_ID

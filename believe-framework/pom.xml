@@ -25,6 +25,7 @@
 
         <!-- 第三方组件版本（不在 Spring Boot BOM 中，需显式管理） -->
         <mybatis-plus.version>3.5.15</mybatis-plus.version>
+        <shardingsphere.version>5.5.3</shardingsphere.version>
         <mysql.version>9.3.0</mysql.version>
         <sa-token.version>1.45.0</sa-token.version>
         <xxl-job.version>2.5.0</xxl-job.version>
@@ -73,6 +74,12 @@
                 <groupId>com.baomidou</groupId>
                 <artifactId>mybatis-plus-jsqlparser</artifactId>
                 <version>${mybatis-plus.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.shardingsphere</groupId>
+                <artifactId>shardingsphere-jdbc</artifactId>
+                <version>${shardingsphere.version}</version>
             </dependency>
 
             <!-- MySQL Connector -->

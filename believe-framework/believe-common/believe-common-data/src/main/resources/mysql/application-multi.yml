@@ -1,0 +1,36 @@
+believe:
+  data:
+    read-write-split:
+      enabled: false
+    multi-datasource:
+      enabled: true
+    sharding:
+      enabled: false
+
+spring:
+  datasource:
+    master:
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      jdbc-url: jdbc:mysql://localhost:3306/believe_master?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf-8
+      username: root
+      password: 123456
+      hikari:
+        maximum-pool-size: 10
+    slave:
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      jdbc-url: jdbc:mysql://localhost:3306/believe_slave?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf-8
+      username: root
+      password: 123456
+      hikari:
+        maximum-pool-size: 20
+    report:
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      jdbc-url: jdbc:mysql://localhost:3306/believe_report?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf-8
+      username: root
+      password: 123456
+      hikari:
+        maximum-pool-size: 5
+
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl

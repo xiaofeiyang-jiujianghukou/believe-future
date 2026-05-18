@@ -1,5 +1,8 @@
 package com.believe.common.core.exception;
 
+import lombok.Getter;
+
+@Getter
 public class BelieveException extends RuntimeException {
 
     private final int code;
@@ -14,5 +17,4 @@ public class BelieveException extends RuntimeException {
         this.code = code;
     }
 
-    public int getCode() { return code; }
 }
