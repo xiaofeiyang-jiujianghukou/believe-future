@@ -8,8 +8,10 @@ import com.alibaba.csp.sentinel.slots.block.flow.FlowRuleManager;
 import com.believe.common.core.result.Result;
 import com.believe.common.core.utils.JsonUtil;
 import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.context.scope.refresh.RefreshScopeRefreshedEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -21,32 +23,35 @@ import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 
 @Slf4j
+@RequiredArgsConstructor
 public class SentinelRateLimiter implements RateLimiter {
 
     private static final String RESOURCE_NAME = "gateway-rate-limit";
 
-    private final boolean enabled;
-    private final int qps;
-
-    public SentinelRateLimiter(
-            @Value("${believe.gateway.rate-limit.enabled:false}") boolean enabled,
-            @Value("${believe.gateway.rate-limit.qps:100}") int qps) {
-        this.enabled = enabled;
-        this.qps = qps;
-    }
+    private final RateLimitProperties properties;
 
     @PostConstruct
     public void initRules() {
+        loadRules(properties.getQps());
+        log.info("Sentinel rate limit initialized: resource={}, qps={}", RESOURCE_NAME, properties.getQps());
+    }
+
+    @EventListener(RefreshScopeRefreshedEvent.class)
+    public void onRefresh() {
+        loadRules(properties.getQps());
+        log.info("Sentinel rate limit refreshed: resource={}, qps={}", RESOURCE_NAME, properties.getQps());
+    }
+
+    private void loadRules(int qps) {
         FlowRule rule = new FlowRule(RESOURCE_NAME);
         rule.setCount(qps);
         rule.setGrade(com.alibaba.csp.sentinel.slots.block.RuleConstant.FLOW_GRADE_QPS);
         FlowRuleManager.loadRules(Collections.singletonList(rule));
-        log.info("Sentinel rate limit initialized: resource={}, qps={}", RESOURCE_NAME, qps);
     }
 
     @Override
     public Mono<Void> rateLimit(ServerWebExchange exchange, WebFilterChain chain) {
-        if (!enabled) {
+        if (!properties.isEnabled()) {
             return chain.filter(exchange);
         }
 

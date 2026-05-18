@@ -4,6 +4,7 @@ import cn.dev33.satoken.stp.StpUtil;
 import com.believe.common.core.result.Result;
 import com.believe.common.core.utils.JsonUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.core.Ordered;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.HttpStatus;
@@ -23,6 +24,7 @@ import java.util.Set;
 
 @Slf4j
 @Component
+@RefreshScope
 public class AuthGlobalFilter implements WebFilter, Ordered {
 
     private static final Set<String> DEFAULT_WHITELIST = Set.of(
@@ -40,7 +42,7 @@ public class AuthGlobalFilter implements WebFilter, Ordered {
             Set<String> merged = new HashSet<>(DEFAULT_WHITELIST);
             merged.addAll(configuredWhitelist);
             this.whitelist = Collections.unmodifiableSet(merged);
-            log.info("Auth whitelist extended: defaults + {}", configuredWhitelist);
+            log.info("Auth whitelist e,xtended: defaults + {}", configuredWhitelist);
         }
     }
 

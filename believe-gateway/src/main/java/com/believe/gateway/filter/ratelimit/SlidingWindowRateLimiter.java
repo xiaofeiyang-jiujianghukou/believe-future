@@ -2,8 +2,8 @@ package com.believe.gateway.filter.ratelimit;
 
 import com.believe.common.core.result.Result;
 import com.believe.common.core.utils.JsonUtil;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -17,28 +17,22 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
+@RequiredArgsConstructor
 public class SlidingWindowRateLimiter implements RateLimiter {
 
-    private final boolean enabled;
-    private final int qps;
+    private final RateLimitProperties properties;
     private final Map<String, AtomicInteger> counters = new ConcurrentHashMap<>();
     private volatile long windowStart = System.currentTimeMillis();
 
-    public SlidingWindowRateLimiter(
-            @Value("${believe.gateway.rate-limit.enabled:false}") boolean enabled,
-            @Value("${believe.gateway.rate-limit.qps:100}") int qps) {
-        this.enabled = enabled;
-        this.qps = qps;
-    }
-
     @Override
     public Mono<Void> rateLimit(ServerWebExchange exchange, WebFilterChain chain) {
-        if (!enabled) {
+        if (!properties.isEnabled()) {
             return chain.filter(exchange);
         }
 
         String path = exchange.getRequest().getURI().getPath();
         long now = System.currentTimeMillis();
+        int qps = properties.getQps();
 
         if (now - windowStart > 1000) {
             synchronized (this) {

@@ -136,9 +136,139 @@ application-dev.yml       ← 本地开发（localhost Nacos）
 application-pro.yml       ← Docker 部署（容器名 Nacos）
 ```
 
-`spring.config.import` 和 Nacos 地址写入 profile 文件，`spring.cloud.bootstrap.enabled` 不再需要。Docker Compose 通过 `SPRING_PROFILES_ACTIVE=pro` 激活部署配置。   - 或 JVM 参数：`-Dspring.cloud.bootstrap.enabled=true`
+`spring.config.import` 和 Nacos 地址写入 profile 文件，`spring.cloud.bootstrap.enabled` 不再需要。Docker Compose 通过 `SPRING_PROFILES_ACTIVE=pro` 激活部署配置。
 
 关键点：
 - `spring.config.import` 写在 `bootstrap.yml`，Nacos server-addr 和 application.name 在此阶段已加载
 - 必须显式启用 bootstrap，Spring Cloud 2025.x 默认 `spring.cloud.bootstrap.enabled=false`
 - `optional:` 前缀确保 Nacos 中不存在对应配置时不会启动失败
+
+---
+
+## 5. believe-gateway 启动报 WebServerInitializedEvent ClassNotFoundException
+
+**时间**：2026-05-19
+
+**问题原因**：
+
+Spring Boot 4.x 对核心 jar 做了拆分，`WebServerInitializedEvent` 从 `spring-boot` jar 移到了 `spring-boot-web-server` jar。`spring-cloud-gateway-server-webflux:5.0.0` 将 `spring-boot-starter-webflux` 声明为 `<optional>true</optional>`，不再传递引入。缺少 `spring-boot-web-server` 导致 `AbstractAutoServiceRegistration` 在 bean 后处理阶段无法解析 `WebServerInitializedEvent` 参数类型，启动直接崩溃。
+
+依赖链：`spring-boot-starter-webflux` → `spring-boot-starter-reactor-netty` → `spring-boot-reactor-netty` → `spring-boot-web-server`（含 `WebServerInitializedEvent`）
+
+**复现场景**：
+
+```bash
+mvn spring-boot:run -f believe-gateway/pom.xml
+```
+
+```
+Caused by: java.lang.ClassNotFoundException:
+  org.springframework.boot.web.server.context.WebServerInitializedEvent
+
+Error creating bean with name 'nacosAutoServiceRegistration':
+  Failed to introspect AbstractAutoServiceRegistration
+```
+
+**解决方案**：
+
+显式引入 `spring-boot-starter-webflux`：
+
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-webflux</artifactId>
+</dependency>
+```
+
+验证：`spring-boot-web-server-4.0.6.jar` 出现在依赖树中，`WebServerInitializedEvent` 可正常加载。
+
+---
+
+## 6. believe-common-log 强依赖 spring-boot-starter-web 污染 WebFlux 项目
+
+**时间**：2026-05-19
+
+**问题原因**：
+
+`believe-common-log` 中 `TraceIdFilter` 继承 `OncePerRequestFilter`（Servlet 栈），模块 POM 将 `spring-boot-starter-web` 声明为 compile scope。所有引用该模块的项目（包括 WebFlux 网关）都会被传递引入完整的 Servlet/MVC 栈。MVC 与 WebFlux 共存可能引发自动配置冲突，且增加不必要的依赖体积。
+
+Gateway 有自己的 `TraceIdGlobalFilter`（WebFilter 实现），不需要 Servlet 版 `TraceIdFilter`。
+
+**解决方案**：
+
+两步联动修改，WebMVC 项目自动启用 TraceIdFilter，WebFlux 项目自动跳过：
+
+1. `believe-common-log/pom.xml` — scope 改为 `provided`，不再传递：
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-web</artifactId>
+    <scope>provided</scope>
+</dependency>
+```
+
+2. `LogAutoConfiguration.java` — 加条件注解，WebFlux 环境（无 `OncePerRequestFilter`）自动跳过：
+```java
+@AutoConfiguration
+@Import(LogAspect.class)
+public class LogAutoConfiguration {
+
+    @Configuration(proxyBeanMethods = false)
+    @ConditionalOnClass(OncePerRequestFilter.class)
+    @Import(TraceIdFilter.class)
+    static class TraceIdFilterConfiguration {
+    }
+}
+```
+
+---
+
+## 7. Gateway 限流/认证配置无法动态刷新
+
+**时间**：2026-05-19
+
+**问题原因**：
+
+`SlidingWindowRateLimiter` 和 `SentinelRateLimiter` 的 `enabled`/`qps` 通过 `@Value` 注入构造函数并存入 `final` 字段；`AuthGlobalFilter` 的白名单同样如此。Bean 创建后这些值不再变化，Nacos 推送新配置后也必须重启才能生效。
+
+**复现场景**：
+
+1. 启动 gateway，qps 配置为 100
+2. Nacos 中将 `believe.gateway.rate-limit.qps` 改为 50
+3. 发送请求，仍在 100 QPS 处限流，新值未生效
+4. 同理，修改 `believe.gateway.auth.whitelist` 后新增的白名单路径仍需认证
+
+**解决方案**：
+
+统一采用 `@ConfigurationProperties` + `@RefreshScope` 模式：
+
+1. 新建 `RateLimitProperties`，Nacos 推送时自动刷新绑定的属性：
+```java
+@Data
+@Component
+@RefreshScope
+@ConfigurationProperties(prefix = "believe.gateway.rate-limit")
+public class RateLimitProperties {
+    private boolean enabled = false;
+    private int qps = 100;
+    private String type = "sliding-window";
+}
+```
+
+2. `SlidingWindowRateLimiter` 去掉 `final` 字段，每次请求实时读取：
+```java
+// 前：构造函数注入 final int qps，永不变化
+// 后：注入 RateLimitProperties，rateLimit() 中实时 properties.getQps()
+```
+
+3. `SentinelRateLimiter` 除实时读取外，监听 `RefreshScopeRefreshedEvent` 自动更新 `FlowRule`：
+```java
+@EventListener(RefreshScopeRefreshedEvent.class)
+public void onRefresh() {
+    loadRules(properties.getQps());
+}
+```
+
+4. `AuthGlobalFilter` 加 `@RefreshScope`，白名单变更时 Bean 自动重建。
+
+效果：修改 Nacos 上的 QPS、开关、白名单等配置，无需重启网关，数秒内生效。

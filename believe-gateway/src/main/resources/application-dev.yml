@@ -6,10 +6,14 @@ spring:
       discovery:
         server-addr: localhost:18848
         namespace: dev
+        locator:
+          enabled: true
+          lower-case-service-id: true
       config:
         server-addr: localhost:18848
         namespace: dev
         file-extension: yaml
+        # 声明共享配置列表
         shared-configs:
           - data-id: common-redis.yaml
             group: DEFAULT_GROUP
