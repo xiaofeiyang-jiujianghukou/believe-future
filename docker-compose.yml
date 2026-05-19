@@ -8,7 +8,7 @@ services:
   mysql:
     image: crpi-27zlqugq2208c0pz.cn-hangzhou.personal.cr.aliyuncs.com/xiaofeiyang930112/mysql:8.0
     container_name: believe-mysql
-    restart: unless-stopped
+    restart: on-failure
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: believe
@@ -27,7 +27,7 @@ services:
   redis:
     image: crpi-27zlqugq2208c0pz.cn-hangzhou.personal.cr.aliyuncs.com/xiaofeiyang930112/redis:7-alpine
     container_name: believe-redis
-    restart: unless-stopped
+    restart: on-failure
     command: redis-server --appendonly yes
     ports:
       - "16379:6379"
@@ -42,7 +42,7 @@ services:
   nacos:
     image: crpi-27zlqugq2208c0pz.cn-hangzhou.personal.cr.aliyuncs.com/xiaofeiyang930112/nacos-server:v2.5.1
     container_name: believe-nacos
-    restart: unless-stopped
+    restart: on-failure
     environment:
       MODE: standalone
       NACOS_AUTH_ENABLE: "false"
@@ -95,7 +95,7 @@ services:
       args:
         SERVICE_DIR: believe-gateway
     container_name: believe-gateway
-    restart: unless-stopped
+    restart: on-failure
     ports:
       - "18080:8080"
       - "18081:8081"
@@ -113,7 +113,7 @@ services:
       args:
         SERVICE_DIR: believe-auth
     container_name: believe-auth
-    restart: unless-stopped
+    restart: on-failure
     ports:
       - "18101:8101"
       - "18102:8102"
@@ -137,7 +137,7 @@ services:
       args:
         SERVICE_DIR: believe-user
     container_name: believe-user
-    restart: unless-stopped
+    restart: on-failure
     ports:
       - "18201:8201"
       - "18202:8202"
